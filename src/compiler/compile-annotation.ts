@@ -16,6 +16,7 @@ const registryFunctionNames = new Set([
 	"number",
 	"datetime",
 	"relativetime",
+	"customFormatter"
 ]);
 
 export function isRegistryFunction(name: string): boolean {

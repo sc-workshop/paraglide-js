@@ -56,5 +56,30 @@ export function datetime(locale, input, options) {
 export function relativetime(locale, input, options) {
 	const { unit, ...intlOptions } = options;
 	return new Intl.RelativeTimeFormat(locale, intlOptions).format(Number(input), unit);
-};`;
+};
+
+/** @type {Map<string, ((value: string, lng: Locale, options: any) => string)>} */
+const registry = new Map();
+
+/**
+ * @param {import("./runtime.js").Locale} locale
+ * @param {string} formatter
+ * @param {{ value: string }} options
+ * @returns {string}
+ */
+export function customFormatter(locale, formatter, options) {
+	const cb = registry.get(formatter);
+	if (cb) return cb(options.value, locale, {});
+
+	return options.value;
+}
+
+/**
+ * @param {string} name
+ * @param {(value: string, lng: Locale, options: any) => string} callback
+ * @returns {void}
+ */
+export function addFormatter(name, callback) {
+	registry.set(name, callback);
+}`;
 }
