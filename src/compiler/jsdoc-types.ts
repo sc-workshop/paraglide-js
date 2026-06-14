@@ -53,32 +53,41 @@ export function inputsType(
 			const name = isValidIdentifier(input.name)
 				? input.name
 				: quotePropertyKey(input.name);
-			return `${name}: ${resolveInputType(input.name, matchTypes)}`;
+			const { optional, typeName } = resolveInputType(input.name, matchTypes);
+			const namePostfix = optional ? "?" : "";
+
+			return `${name}${namePostfix}: ${typeName}`;
 		})
 		.join(", ");
+
 	return `{ ${inputParams} }`;
 }
 
-function resolveInputType(name: string, matchTypes?: InputMatchTypes): string {
-	if (!matchTypes) return "NonNullable<unknown>";
+function resolveInputType(name: string, matchTypes?: InputMatchTypes): {
+	optional?: boolean,
+	typeName: string
+} {
+	let typeName = "NonNullable<unknown>";
+	if (!matchTypes) return { typeName };
 
 	const info = matchTypes.get(name);
-	if (!info) return "NonNullable<unknown>";
-	if (info.hasCatchAll) return "NonNullable<unknown>";
+	if (!info) return { typeName };
 
 	const literals = Array.from(info.literals);
-	if (literals.length === 0) return "NonNullable<unknown>";
+	if (literals.length === 0) { typeName };
 
 	literals.sort();
-	return literals
+	typeName = literals
 		.flatMap((value) => renderInputMatchTypeVariants(value))
 		.filter((value, index, values) => values.indexOf(value) === index)
 		.join(" | ");
+
+	return { typeName, optional: info.hasCatchAll }
 }
 
 export function inputTypeForName(
 	name: string,
 	matchTypes?: InputMatchTypes
 ): string {
-	return resolveInputType(name, matchTypes);
+	return resolveInputType(name, matchTypes).typeName;
 }
