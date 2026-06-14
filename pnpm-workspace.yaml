@@ -6,3 +6,6 @@ packages:
   - "!examples/next-js-ssg"
   - "!examples/next-js-ssr"
   - "benchmark"
+allowBuilds:
+  esbuild: true
+  sharp: true
