@@ -18,26 +18,26 @@ export const compileMessage = (
 	inputTypeAliasName?: string
 ): Compiled<Message> => {
 	// return empty string instead?
-	if (variants.length == 0) {
+	if (variants.length === 0) {
 		throw new Error("Message must have at least one variant");
 	}
 
 	const hasMultipleVariants = variants.length > 1;
 	return hasMultipleVariants
 		? compileMessageWithMultipleVariants(
-				declarations,
-				message,
-				variants,
-				matchTypes,
-				inputTypeAliasName
-			)
+			declarations,
+			message,
+			variants,
+			matchTypes,
+			inputTypeAliasName
+		)
 		: compileMessageWithOneVariant(
-				declarations,
-				message,
-				variants,
-				matchTypes,
-				inputTypeAliasName
-			);
+			declarations,
+			message,
+			variants,
+			matchTypes,
+			inputTypeAliasName
+		);
 };
 
 function compileMessageWithOneVariant(
@@ -140,11 +140,11 @@ function compileMessageWithMultipleVariants(
 		});
 		const compiledPartsPattern = hasMarkup
 			? compilePattern({
-					pattern: variant.pattern,
-					declarations,
-					mode: "parts",
-					locale: message.locale,
-				})
+				pattern: variant.pattern,
+				declarations,
+				mode: "parts",
+				locale: message.locale,
+			})
 			: undefined;
 
 		const isCatchAll = variant.matches.every(
@@ -228,19 +228,17 @@ function compileMessageWithMultipleVariants(
 	const code = `/** @type {((inputs: ${inputType}) => LocalizedString) & { parts: (inputs: ${inputType}) => import('../runtime.js').MessagePart[] }} */ (
 	/* @__PURE__ */ Object.assign(
 		/** @type {(inputs: ${inputType}) => LocalizedString} */ ((${messageInput}) => {
-			${localVariablesCode}${stringVariantsCode}${
-				hasCatchAll
-					? ""
-					: `return /** @type {LocalizedString} */ (${JSON.stringify(message.bundleId)});`
-			}
+			${localVariablesCode}${stringVariantsCode}${hasCatchAll
+			? ""
+			: `return /** @type {LocalizedString} */ (${JSON.stringify(message.bundleId)});`
+		}
 		}),
 		{
 			parts: /** @type {(inputs: ${inputType}) => import('../runtime.js').MessagePart[]} */ ((${messageInput}) => {
-				${localVariablesCode}${partsVariantsCode}${
-					hasCatchAll
-						? ""
-						: `return /** @type {import('../runtime.js').MessagePart[]} */ (${fallbackParts});`
-				}
+				${localVariablesCode}${partsVariantsCode}${hasCatchAll
+			? ""
+			: `return /** @type {import('../runtime.js').MessagePart[]} */ (${fallbackParts});`
+		}
 			})
 		}
 	)

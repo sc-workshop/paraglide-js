@@ -65,16 +65,19 @@ test("inputsType emits literal unions for match values", () => {
 		{ name: "status", type: "input-variable" },
 	];
 
-	const matchTypes = new Map([
-		[
-			"type",
-			{
-				literals: new Set(["invalid", "empty", "min_length"]),
-				hasCatchAll: false,
-			},
-		],
-		["status", { literals: new Set(["ready", "done"]), hasCatchAll: false }],
-	]);
+	const matchTypes = {
+		definition: new Map([
+			[
+				"type",
+				{
+					literals: new Set(["invalid", "empty", "min_length"]),
+					hasCatchAll: false,
+				},
+			],
+			["status", { literals: new Set(["ready", "done"]), hasCatchAll: false }],
+		]),
+		matchVariants: []
+	};
 
 	const result = inputsType(inputs, matchTypes);
 
@@ -86,15 +89,18 @@ test("inputsType emits literal unions for match values", () => {
 test("inputsType accepts both number and string forms for numeric match values", () => {
 	const inputs: InputVariable[] = [{ name: "input", type: "input-variable" }];
 
-	const matchTypes = new Map([
-		[
-			"input",
-			{
-				literals: new Set(["1", "2"]),
-				hasCatchAll: false,
-			},
-		],
-	]);
+	const matchTypes = {
+		definition: new Map([
+			[
+				"input",
+				{
+					literals: new Set(["1", "2"]),
+					hasCatchAll: false,
+				},
+			],
+		]),
+		matchVariants: []
+	}
 
 	const result = inputsType(inputs, matchTypes);
 
@@ -104,16 +110,18 @@ test("inputsType accepts both number and string forms for numeric match values",
 test("inputsType widens infinity match values to number and string forms", () => {
 	const inputs: InputVariable[] = [{ name: "input", type: "input-variable" }];
 
-	const matchTypes = new Map([
-		[
-			"input",
-			{
-				literals: new Set(["Infinity", "-Infinity"]),
-				hasCatchAll: false,
-			},
-		],
-	]);
-
+	const matchTypes = {
+		definition: new Map([
+			[
+				"input",
+				{
+					literals: new Set(["Infinity", "-Infinity"]),
+					hasCatchAll: false,
+				},
+			],
+		]),
+		matchVariants: []
+	}
 	const result = inputsType(inputs, matchTypes);
 
 	expect(result).toBe('{ input: number | "-Infinity" | "Infinity" }');
@@ -122,9 +130,12 @@ test("inputsType widens infinity match values to number and string forms", () =>
 test("inputsType falls back to NonNullable<unknown> when catchall exists", () => {
 	const inputs: InputVariable[] = [{ name: "type", type: "input-variable" }];
 
-	const matchTypes = new Map([
-		["type", { literals: new Set(["invalid"]), hasCatchAll: true }],
-	]);
+	const matchTypes = {
+		definition: new Map([
+			["type", { literals: new Set(["invalid"]), hasCatchAll: true }],
+		]),
+		matchVariants: []
+	};
 
 	const result = inputsType(inputs, matchTypes);
 

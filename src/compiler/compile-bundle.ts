@@ -11,6 +11,7 @@ import type { Compiled } from "./types.js";
 import {
 	inputTypeForName,
 	jsDocBundleFunctionTypes,
+	type InputMatchDefinition,
 	type InputMatchTypes,
 } from "./jsdoc-types.js";
 import { isValidIdentifier, quotePropertyKey } from "./variable-access.js";
@@ -219,11 +220,10 @@ ${isSafeBundleId ? "export " : ""}const ${safeBundleId} = /** @type {(${bundleFu
 			"\t"
 		)}
 ${localeResolutionStatement("\t")}
-	${compileLocaleReturnStatements("string", "\t")}${
-		!isFullyTranslated
-			? `\n	return /** @type {LocalizedString} */ ("${args.bundle.id}")`
-			: ""
-	}
+	${compileLocaleReturnStatements("string", "\t")}${!isFullyTranslated
+				? `\n	return /** @type {LocalizedString} */ ("${args.bundle.id}")`
+				: ""
+			}
 });`;
 	} else {
 		code = `${commonJsDoc}
@@ -233,22 +233,19 @@ ${isSafeBundleId ? "export " : ""}const ${safeBundleId} = /** @type {(${bundleFu
 			"\t\t\t"
 		)}
 ${localeResolutionStatement("\t\t\t")}
-			${compileLocaleReturnStatements("string", "\t\t\t")}${
-				!isFullyTranslated
-					? `\n			return /** @type {LocalizedString} */ (${JSON.stringify(args.bundle.id)})`
-					: ""
+			${compileLocaleReturnStatements("string", "\t\t\t")}${!isFullyTranslated
+				? `\n			return /** @type {LocalizedString} */ (${JSON.stringify(args.bundle.id)})`
+				: ""
 			}
 		}),
 		{
-			parts: /** @type {${partsFunctionType}} */ ((inputs${
-				hasInputs ? "" : " = {}"
+			parts: /** @type {${partsFunctionType}} */ ((inputs${hasInputs ? "" : " = {}"
 			}, options = {}) => {${clientPartsMiddlewareGuard("\t\t\t\t")}
 ${localeResolutionStatement("\t\t\t\t")}
-				${compileLocaleReturnStatements("parts", "\t\t\t\t")}${
-					!isFullyTranslated
-						? `\n				return /** @type {import('../runtime.js').MessagePart[]} */ ([{ type: "text", value: ${JSON.stringify(args.bundle.id)} }])`
-						: ""
-				}
+				${compileLocaleReturnStatements("parts", "\t\t\t\t")}${!isFullyTranslated
+				? `\n				return /** @type {import('../runtime.js').MessagePart[]} */ ([{ type: "text", value: ${JSON.stringify(args.bundle.id)} }])`
+				: ""
+			}
 			})
 		}
 	)
@@ -525,13 +522,13 @@ function collectMarkupAttributes(
 function resolveMarkupOptionType(
 	value:
 		| {
-				type: "literal";
-				value: string;
-		  }
+			type: "literal";
+			value: string;
+		}
 		| {
-				type: "variable-reference";
-				name: string;
-		  },
+			type: "variable-reference";
+			name: string;
+		},
 	inputVariableNames: Set<string>,
 	matchTypes: InputMatchTypes
 ): string {
@@ -616,18 +613,31 @@ function collectInputMatchTypes(bundle: BundleNested): InputMatchTypes {
 			?.filter((decl) => decl.type === "input-variable")
 			.map((decl) => decl.name) ?? []
 	);
-	const matchTypes: InputMatchTypes = new Map();
+	const matchTypes: InputMatchTypes = { definition: new Map(), matchVariants: [] };
 
 	const ensureInfo = (name: string) => {
-		const existing = matchTypes.get(name);
+		const existing = matchTypes.definition.get(name);
 		if (existing) return existing;
-		const created = { literals: new Set<string>(), hasCatchAll: false };
-		matchTypes.set(name, created);
-		return created;
+		const definition: InputMatchDefinition = { literals: new Set<string>(), hasCatchAll: false };
+		matchTypes.definition.set(name, definition);
+		return definition;
 	};
 
+	// Counting variants count
+	let variantsCount = 0;
 	for (const message of bundle.messages) {
-		for (const variant of message.variants) {
+		variantsCount = Math.max(variantsCount, message.variants.length);
+	}
+
+	// Initializing variant set
+	for (let i = 0; variantsCount > i; i++) {
+		matchTypes.matchVariants.push({ optional: false, matches: [], usedKeys: new Set() });
+	}
+
+	for (const message of bundle.messages) {
+		for (let i = 0; message.variants.length > i; i++) {
+			const variants = matchTypes.matchVariants[i]!;
+			const variant = message.variants[i]!;
 			if (!variant.matches || variant.matches.length === 0) {
 				for (const name of inputNames) {
 					const info = ensureInfo(name);
@@ -635,6 +645,7 @@ function collectInputMatchTypes(bundle: BundleNested): InputMatchTypes {
 				}
 				continue;
 			}
+
 			for (const match of variant.matches ?? []) {
 				if (!inputNames.has(match.key)) continue;
 				const info = ensureInfo(match.key);
@@ -644,6 +655,48 @@ function collectInputMatchTypes(bundle: BundleNested): InputMatchTypes {
 				}
 				if (match.type === "literal-match") {
 					info.literals.add(match.value);
+				}
+			}
+
+			// Forming unique variant input types
+			// Iterate through pattern arguments first
+			for (const pattern of variant.pattern) {
+				if (pattern.type !== "expression") continue;
+				if (pattern.arg.type !== "variable-reference") continue;
+
+				variants.usedKeys.add(pattern.arg.name);
+			}
+
+			const getVariableInfo = (name: string): { rootName: string, annotated: boolean } => {
+				const declaration = bundle.declarations.find(value => value.name === name);
+				if (!declaration || declaration.type === "input-variable")
+					return { rootName: name, annotated: false };
+
+				const annotated = declaration.value.annotation !== undefined;
+				const arg = declaration.value.arg;
+				if (arg.type === "variable-reference") {
+					const rootName = getVariableInfo(arg.name).rootName;
+					return { rootName, annotated };
+				}
+
+				return { rootName: name, annotated };
+			}
+
+			// Then trough matches arguments
+			for (const match of variant.matches ?? []) {
+				// Handling cases when match may be linked to local variable
+				// We need to get input variable declaration
+				const info = getVariableInfo(match.key);
+				if (info.annotated) continue;
+
+				switch (match.type) {
+					case "catchall-match":
+						variants.matches.push({ key: info.rootName, value: "" })
+						variants.optional = true;
+						break;
+					case "literal-match":
+						variants.matches.push({ key: info.rootName, value: match.value })
+						break;
 				}
 			}
 		}

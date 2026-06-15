@@ -25,7 +25,7 @@ test("should emit per locale message files", () => {
 					node: {} as unknown as Message,
 				},
 			},
-			matchTypes: new Map(),
+			matchTypes: {definition: new Map(), matchVariants: []},
 		},
 	];
 
@@ -59,7 +59,7 @@ test("the files should include files for each locale, even if there are no messa
 				} as unknown as Bundle,
 			},
 			messages: {},
-			matchTypes: new Map(),
+			matchTypes: { definition: new Map(), matchVariants: [] },
 		},
 	];
 
@@ -95,7 +95,7 @@ test("should handle case sensitivity in message IDs correctly", () => {
 					node: {} as unknown as Message,
 				},
 			},
-			matchTypes: new Map(),
+			matchTypes: { definition: new Map(), matchVariants: [] },
 		},
 		{
 			bundle: {
@@ -110,7 +110,7 @@ test("should handle case sensitivity in message IDs correctly", () => {
 					node: {} as unknown as Message,
 				},
 			},
-			matchTypes: new Map(),
+			matchTypes: { definition: new Map(), matchVariants: [] },
 		},
 	];
 
@@ -149,7 +149,7 @@ test("prefixes locale imports to avoid message name collisions", () => {
 					node: {} as unknown as Message,
 				},
 			},
-			matchTypes: new Map(),
+			matchTypes: { definition: new Map(), matchVariants: [] },
 		},
 	];
 
@@ -184,7 +184,7 @@ test("emits minimal runtime imports in index when middleware splitting is disabl
 					node: {} as unknown as Message,
 				},
 			},
-			matchTypes: new Map(),
+			matchTypes: { definition: new Map(), matchVariants: [] },
 		},
 	];
 

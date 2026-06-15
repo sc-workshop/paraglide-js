@@ -22,7 +22,7 @@ test("should emit per locale message files", () => {
 					node: {} as unknown as Message,
 				},
 			},
-			matchTypes: new Map(),
+			matchTypes: { definition: new Map(), matchVariants: [] },
 		},
 	];
 
@@ -58,7 +58,7 @@ test("handles case senstivity by creating directories and files only in lowercas
 					node: {} as unknown as Message,
 				},
 			},
-			matchTypes: new Map(),
+			matchTypes: { definition: new Map(), matchVariants: [] },
 		},
 		{
 			bundle: {
@@ -73,7 +73,7 @@ test("handles case senstivity by creating directories and files only in lowercas
 					node: {} as unknown as Message,
 				},
 			},
-			matchTypes: new Map(),
+			matchTypes: { definition: new Map(), matchVariants: [] },
 		},
 	];
 	const settings: Pick<ProjectSettings, "locales" | "baseLocale"> = {
@@ -103,7 +103,7 @@ test("emits minimal runtime imports when middleware splitting is disabled", () =
 					node: {} as unknown as Message,
 				},
 			},
-			matchTypes: new Map(),
+			matchTypes: { definition: new Map(), matchVariants: [] },
 		},
 	];
 
@@ -139,7 +139,7 @@ test("emits fallback definitions after their dependencies", () => {
 					node: {} as unknown as Message,
 				},
 			},
-			matchTypes: new Map(),
+			matchTypes: { definition: new Map(), matchVariants: [] },
 		},
 	];
 
