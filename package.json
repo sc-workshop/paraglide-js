@@ -14,8 +14,7 @@
 		"url": "https://github.com/opral/paraglide-js"
 	},
 	"bin": {
-		"paraglide-js": "./bin/run.js",
-		"paraglide-ts": "./bin/run.ts"
+		"paraglide-js": "./bin/run.js"
 	},
 	"files": [
 		"./dist",
